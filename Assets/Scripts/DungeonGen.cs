@@ -6,6 +6,8 @@ using UnityEngine.Experimental.GlobalIllumination;
 
 public class DungeonGen : MonoBehaviour
 {
+    public int MinRoomSize = 10;
+    public int MaxRoomSize = 200;
 
     private List<RectInt> OpenRooms;
     private List<RectInt> ClosedRooms;
@@ -33,33 +35,43 @@ public class DungeonGen : MonoBehaviour
         {
             AlgorithmsUtils.DebugRectInt(room, Color.green);
         }
-        AlgorithmsUtils.DebugRectInt(DebugRoom, Color.blue);
-        AlgorithmsUtils.DebugRectInt(DebugRoom2, Color.yellow);
+        if (OpenRooms.Count > 0)
+        {
+            AlgorithmsUtils.DebugRectInt(DebugRoom, Color.blue);
+            AlgorithmsUtils.DebugRectInt(DebugRoom2, Color.yellow);
+        }
     }
 
     public void DivideRect(RectInt room)
     {
-        if (room.width > room.height)
+        if (room.width * room.height > MaxRoomSize)
         {
-            RectInt newRoomA = new RectInt(room.x, room.y, GetPaddedRandom(room.width, 3), room.height);
-            RectInt newRoomB = new RectInt(room.x + newRoomA.width, room.y + 0, room.width - newRoomA.width, room.height);
-            OpenRooms.Add(newRoomA);
-            OpenRooms.Add(newRoomB);
-            //ClosedRooms.Add(room);
-            OpenRooms.Remove(room);
-            DebugRoom = newRoomB;
-            DebugRoom2 = newRoomA;
+            if (room.width > room.height)
+            {
+                RectInt newRoomA = new RectInt(room.x, room.y, GetPaddedRandom(room.width, MinRoomSize), room.height);
+                RectInt newRoomB = new RectInt(room.x + newRoomA.width, room.y + 0, room.width - newRoomA.width, room.height);
+                OpenRooms.Add(newRoomA);
+                OpenRooms.Add(newRoomB);
+                OpenRooms.Remove(room);
+                DebugRoom = newRoomB;
+                DebugRoom2 = newRoomA;
+            }
+            else
+            {
+                RectInt newRoomA = new RectInt(room.x, room.y, room.width, GetPaddedRandom(room.height, MinRoomSize));
+                RectInt newRoomB = new RectInt(room.x + 0, room.y + newRoomA.height, room.width, room.height - newRoomA.height);
+                OpenRooms.Add(newRoomA);
+                OpenRooms.Add(newRoomB);
+                OpenRooms.Remove(room);
+                DebugRoom = newRoomB;
+                DebugRoom2 = newRoomA;
+            }
         } else
         {
-            RectInt newRoomA = new RectInt(room.x, room.y, room.width, GetPaddedRandom(room.height, 3));
-            RectInt newRoomB = new RectInt(room.x + 0, room.y + newRoomA.height, room.width, room.height - newRoomA.height);
-            OpenRooms.Add(newRoomA);
-            OpenRooms.Add(newRoomB);
-            //ClosedRooms.Add(room);
+            ClosedRooms.Add(room);
             OpenRooms.Remove(room);
-            DebugRoom = newRoomB;
-            DebugRoom2 = newRoomA;
-        }  
+
+        }
     }
 
     public int GetPaddedRandom(int MaxNumber, int Padding)
