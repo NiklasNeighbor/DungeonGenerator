@@ -11,6 +11,10 @@ public class DungeonGen : MonoBehaviour
 
     private List<RectInt> OpenRooms;
     private List<RectInt> ClosedRooms;
+
+    private List<RectInt> OpenWalls;
+    private List<RectInt> ClosedWalls;
+
     private RectInt DebugRoom;
     private RectInt DebugRoom2;
 
@@ -22,6 +26,7 @@ public class DungeonGen : MonoBehaviour
 
         OpenRooms.Add(new RectInt(0, 0, 100, 50));
         StartCoroutine(SplitRoomsCoroutine());
+        StartCoroutine(WaitForRoomsCoroutine());
     }
 
     // Update is called once per frame
@@ -93,4 +98,12 @@ public class DungeonGen : MonoBehaviour
 
         }
     }
+
+    public IEnumerator WaitForRoomsCoroutine()
+    {
+        yield return new WaitUntil(() => OpenRooms.Count < 1);
+        Debug.Log("Rooms Done!");
+    }
+
+
 }
