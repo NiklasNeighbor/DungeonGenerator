@@ -53,8 +53,8 @@ public class DungeonGen : MonoBehaviour
         {
             if (room.width > room.height)
             {
-                RectInt newRoomA = new RectInt(room.x, room.y, GetPaddedRandom(room.width, MinRoomSize), room.height);
-                RectInt newRoomB = new RectInt(room.x + newRoomA.width, room.y + 0, room.width - newRoomA.width, room.height);
+                RectInt newRoomA = new RectInt(room.x, room.y, GetPaddedRandom(room.width, MinRoomSize) + 1, room.height);
+                RectInt newRoomB = new RectInt(room.x + newRoomA.width -1, room.y + 0, room.width - newRoomA.width +1, room.height);
                 OpenRooms.Add(newRoomA);
                 OpenRooms.Add(newRoomB);
                 OpenRooms.Remove(room);
@@ -63,8 +63,8 @@ public class DungeonGen : MonoBehaviour
             }
             else
             {
-                RectInt newRoomA = new RectInt(room.x, room.y, room.width, GetPaddedRandom(room.height, MinRoomSize));
-                RectInt newRoomB = new RectInt(room.x + 0, room.y + newRoomA.height, room.width, room.height - newRoomA.height);
+                RectInt newRoomA = new RectInt(room.x, room.y, room.width, GetPaddedRandom(room.height, MinRoomSize) + 1);
+                RectInt newRoomB = new RectInt(room.x + 0, room.y + newRoomA.height -1, room.width, room.height - newRoomA.height +1);
                 OpenRooms.Add(newRoomA);
                 OpenRooms.Add(newRoomB);
                 OpenRooms.Remove(room);
