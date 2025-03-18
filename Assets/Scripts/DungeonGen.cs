@@ -24,6 +24,9 @@ public class DungeonGen : MonoBehaviour
         OpenRooms = new List<RectInt>();
         ClosedRooms = new List<RectInt>();
 
+        OpenWalls = new List<RectInt>();
+        ClosedWalls = new List<RectInt>();
+
         OpenRooms.Add(new RectInt(0, 0, 100, 50));
         StartCoroutine(SplitRoomsCoroutine());
         StartCoroutine(WaitForRoomsCoroutine());
@@ -40,10 +43,16 @@ public class DungeonGen : MonoBehaviour
         {
             AlgorithmsUtils.DebugRectInt(room, Color.green);
         }
+
         if (OpenRooms.Count > 0)
         {
             AlgorithmsUtils.DebugRectInt(DebugRoom, Color.blue);
             AlgorithmsUtils.DebugRectInt(DebugRoom2, Color.yellow);
+        }
+
+        foreach (RectInt Wall in ClosedWalls)
+        {
+            AlgorithmsUtils.DebugRectInt(Wall, Color.cyan);
         }
     }
 
@@ -87,7 +96,7 @@ public class DungeonGen : MonoBehaviour
 
     public IEnumerator SplitRoomsCoroutine()
     {
-        while (true)
+        while (OpenRooms.Count > 0)
         {
             yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.Space));
            // foreach (RectInt room in OpenRooms)
@@ -103,7 +112,70 @@ public class DungeonGen : MonoBehaviour
     {
         yield return new WaitUntil(() => OpenRooms.Count < 1);
         Debug.Log("Rooms Done!");
+        FindWalls();
     }
 
+
+
+    public void FindWalls()
+    {
+        for(int i = 0; i < ClosedRooms.Count; i++)
+        {
+            OpenWalls.Add(ClosedRooms[i]);
+        }
+        StartCoroutine(FindWallCoroutine());
+
+        /*
+        while (OpenWalls[0] != null)
+        {
+            foreach (RectInt Room2 in OpenWalls)
+            {
+                if (OpenWalls[0] == Room2)
+                {
+                    continue;
+                }
+                RectInt SharedWall = AlgorithmsUtils.Intersect(OpenWalls[0], Room2);
+                Debug.Log(SharedWall);
+            }
+            OpenWalls.Remove(OpenWalls[0]);
+        } 
+        */
+    }
+
+    public IEnumerator FindWallCoroutine()
+    {
+        while (OpenWalls.Count > 0)
+        {
+            yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.Space));
+            // foreach (RectInt room in OpenRooms)
+            {
+                FindSingleWall(OpenWalls[0]);
+            }
+            yield return new WaitForEndOfFrame();
+
+        }
+        Debug.Log("Walls Done!");
+    }
+
+    public void FindSingleWall(RectInt MainRoom)
+    {
+        foreach (RectInt Room2 in OpenWalls)
+        {
+            if (MainRoom == Room2)
+            {
+                continue;
+            }
+            RectInt SharedWall = AlgorithmsUtils.Intersect(MainRoom, Room2);
+            
+            if (SharedWall != null)
+            {
+                ClosedWalls.Add(SharedWall);
+                Debug.Log(SharedWall);
+            }
+        }
+        OpenWalls.Remove(MainRoom);
+    }
+
+    //TODO: Go through ClosedWalls and turn all the walls into doors.
 
 }
