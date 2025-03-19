@@ -15,6 +15,8 @@ public class DungeonGen : MonoBehaviour
     private List<RectInt> OpenWalls;
     private List<RectInt> ClosedWalls;
 
+    private List<RectInt> Doors;
+
     private RectInt DebugRoom;
     private RectInt DebugRoom2;
 
@@ -26,6 +28,8 @@ public class DungeonGen : MonoBehaviour
 
         OpenWalls = new List<RectInt>();
         ClosedWalls = new List<RectInt>();
+
+        Doors = new List<RectInt>();
 
         OpenRooms.Add(new RectInt(0, 0, 100, 50));
         StartCoroutine(SplitRoomsCoroutine());
@@ -53,6 +57,10 @@ public class DungeonGen : MonoBehaviour
         foreach (RectInt Wall in ClosedWalls)
         {
             AlgorithmsUtils.DebugRectInt(Wall, Color.cyan);
+        }
+        foreach (RectInt door in Doors)
+        {
+            AlgorithmsUtils.DebugRectInt(door, Color.yellow);
         }
     }
 
@@ -155,6 +163,7 @@ public class DungeonGen : MonoBehaviour
 
         }
         Debug.Log("Walls Done!");
+        WallsToDoors();
     }
 
     public void FindSingleWall(RectInt MainRoom)
@@ -176,6 +185,24 @@ public class DungeonGen : MonoBehaviour
         OpenWalls.Remove(MainRoom);
     }
 
-    //TODO: Go through ClosedWalls and turn all the walls into doors.
+    public void WallsToDoors()
+    {
+        foreach(RectInt wall in ClosedWalls)
+        {
+            if (wall.width > wall.height)
+            {
+                int DoorLocation = Random.Range(0, wall.width - 1);
+                RectInt NewDoor = new RectInt(wall.x + DoorLocation, wall.y, 1, 1);
+                Doors.Add(NewDoor);
+            }
+            else
+            {
+                int DoorLocation = Random.Range(0, wall.height - 1);
+                RectInt NewDoor = new RectInt(wall.x, wall.y + DoorLocation, 1, 1);
+                Doors.Add(NewDoor);
+            }
+        }
+    }
+    //TODO: figure out why the doors spawn weird at times.
 
 }
