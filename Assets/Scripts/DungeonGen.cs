@@ -20,6 +20,8 @@ public class DungeonGen : MonoBehaviour
     private RectInt DebugRoom;
     private RectInt DebugRoom2;
 
+    private bool DebugDoorBool = false;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -61,6 +63,12 @@ public class DungeonGen : MonoBehaviour
         foreach (RectInt door in Doors)
         {
             AlgorithmsUtils.DebugRectInt(door, Color.yellow);
+        }
+
+        if (DebugDoorBool)
+        {
+            AlgorithmsUtils.DebugRectInt(DebugRoom, Color.blue);
+            AlgorithmsUtils.DebugRectInt(DebugRoom2, Color.yellow);
         }
     }
 
@@ -163,7 +171,8 @@ public class DungeonGen : MonoBehaviour
 
         }
         Debug.Log("Walls Done!");
-        WallsToDoors();
+        StartCoroutine(WallToDoorCoroutine());
+        //WallsToDoors();
     }
 
     public void FindSingleWall(RectInt MainRoom)
@@ -176,7 +185,7 @@ public class DungeonGen : MonoBehaviour
             }
             RectInt SharedWall = AlgorithmsUtils.Intersect(MainRoom, Room2);
             
-            if (SharedWall != null)
+            if (SharedWall.width > 2 || SharedWall.height > 2) //Ensure the wall in question is long enough to fit a door
             {
                 ClosedWalls.Add(SharedWall);
                 Debug.Log(SharedWall);
@@ -191,18 +200,49 @@ public class DungeonGen : MonoBehaviour
         {
             if (wall.width > wall.height)
             {
-                int DoorLocation = Random.Range(0, wall.width - 1);
+                int DoorLocation = Random.Range(0 + 1, wall.width - 2);
                 RectInt NewDoor = new RectInt(wall.x + DoorLocation, wall.y, 1, 1);
                 Doors.Add(NewDoor);
             }
             else
             {
-                int DoorLocation = Random.Range(0, wall.height - 1);
+                int DoorLocation = Random.Range(0 + 1, wall.height - 2);
                 RectInt NewDoor = new RectInt(wall.x, wall.y + DoorLocation, 1, 1);
                 Doors.Add(NewDoor);
             }
         }
     }
     //TODO: figure out why the doors spawn weird at times.
+
+    public IEnumerator WallToDoorCoroutine()
+    {
+        
+        for (int i = 0; i < ClosedWalls.Count; i++)
+        {
+            
+            yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.Space));
+
+            DebugDoorBool = true;
+            DebugRoom = ClosedWalls[i];
+            Debug.Log(ClosedWalls[i]);
+
+            if (ClosedWalls[i].width > ClosedWalls[i].height)
+            {
+                int DoorLocation = Random.Range(0 + 1, ClosedWalls[i].width - 2);
+                RectInt NewDoor = new RectInt(ClosedWalls[i].x + DoorLocation, ClosedWalls[i].y, 1, 1);
+                DebugRoom2 = NewDoor;
+                Doors.Add(NewDoor);
+            }
+            else
+            {
+                int DoorLocation = Random.Range(0 + 1, ClosedWalls[i].height - 2);
+                RectInt NewDoor = new RectInt(ClosedWalls[i].x, ClosedWalls[i].y + DoorLocation, 1, 1);
+                DebugRoom2 = NewDoor;
+                Doors.Add(NewDoor);
+            }
+            yield return new WaitForEndOfFrame();
+        }
+        Debug.Log("Doors Done!");
+    }
 
 }
