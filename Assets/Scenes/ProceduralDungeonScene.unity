@@ -287,6 +287,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MinRoomSize: 5
   MaxRoomSize: 200
+  generate: 1
+  generationSpeed: 0.1
 --- !u!4 &384253455
 Transform:
   m_ObjectHideFlags: 0

@@ -8,12 +8,18 @@ public class DungeonGen : MonoBehaviour
 {
     public int MinRoomSize = 10;
     public int MaxRoomSize = 200;
+    public enum GenerationStyle {OnSpace, Timed, Instant}
+    public GenerationStyle generate = GenerationStyle.OnSpace;
+    public float generationSpeed = 0.5f;
 
     private List<DungeonLocation> OpenRooms;
     private List<DungeonLocation> ClosedRooms;
 
     private List<DungeonLocation> OpenWalls;
     private List<DungeonLocation> ClosedWalls;
+
+    private List<DungeonLocation> OpenNodes;
+    private List<DungeonLocation> ClosedNodes;
 
     private List<DungeonLocation> Doors;
 
@@ -30,6 +36,9 @@ public class DungeonGen : MonoBehaviour
 
         OpenWalls = new List<DungeonLocation>();
         ClosedWalls = new List<DungeonLocation>();
+
+        OpenNodes = new List<DungeonLocation>();
+        ClosedNodes = new List<DungeonLocation>();
 
         Doors = new List<DungeonLocation>();
 
@@ -69,6 +78,64 @@ public class DungeonGen : MonoBehaviour
         {
             AlgorithmsUtils.DebugRectInt(DebugRoom, Color.blue);
             AlgorithmsUtils.DebugRectInt(DebugRoom2, Color.yellow);
+        }
+
+        
+    }
+
+    public IEnumerator GraphDebugDraw(DungeonLocation StartNode)
+    {
+        OpenNodes.Add(StartNode);
+        while (OpenNodes.Count > 0)
+        {
+            yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.Space));
+            yield return new WaitForEndOfFrame();
+            DebugExtension.DebugCircle(OpenNodes[0].Room.center, Color.yellow, 1f, 5f);
+            Debug.Log("Room Center: " +  OpenNodes[0].Room.center);
+            foreach (DungeonLocation neighbor in OpenNodes[0].NeighborLocations)
+            {
+                Debug.DrawLine(neighbor.Room.center, neighbor.Room.center, Color.yellow, 5f);
+                OpenNodes.Add(neighbor);
+            }
+            ClosedNodes.Add(OpenNodes[0]);
+            OpenNodes.Remove(OpenNodes[0]);
+        }
+        if (ClosedNodes.Count == ClosedRooms.Count + Doors.Count)
+        {
+            Debug.Log("All Rooms Are Connected!");
+            Debug.LogWarning("There are " + ClosedNodes.Count + " ClosedNodes and " + (ClosedRooms.Count + Doors.Count) + "ClosedRooms and Doors!");
+        } else if (ClosedNodes.Count < ClosedRooms.Count + Doors.Count)
+        {
+            Debug.LogWarning("Not all Rooms are connected!");
+            Debug.LogWarning("What?");
+            Debug.LogWarning("There are " + ClosedNodes.Count + " ClosedNodes and " + (ClosedRooms.Count + Doors.Count) + "ClosedRooms and Doors!");
+        }
+        else
+        {
+            Debug.LogWarning("What?");
+            Debug.LogWarning("There are " + ClosedNodes.Count + " ClosedNodes but only " + (ClosedRooms.Count + Doors.Count) + "ClosedRooms and Doors!");
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (Application.isPlaying)
+        {
+            foreach (DungeonLocation node in OpenNodes)
+            {
+                Gizmos.color = Color.yellow;
+                Gizmos.DrawSphere(node.Room.center, 1f);
+            }
+
+            foreach (DungeonLocation node in ClosedNodes)
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawSphere(node.Room.center, 1f);
+                foreach (DungeonLocation neighbor in node.NeighborLocations)
+                {
+                    Gizmos.DrawLine(node.Room.center, neighbor.Room.center);
+                }
+            }
         }
     }
 
@@ -114,7 +181,17 @@ public class DungeonGen : MonoBehaviour
     {
         while (OpenRooms.Count > 0)
         {
-            yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.Space));
+
+            switch (generate)
+            {
+                case GenerationStyle.OnSpace:
+                    yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.Space));
+                    break;
+                case GenerationStyle.Timed:
+                    yield return new WaitForSeconds(generationSpeed); 
+                    break;
+            }
+            
            // foreach (RectInt room in OpenRooms)
             {
                 DivideRect(OpenRooms[0]);
@@ -162,7 +239,15 @@ public class DungeonGen : MonoBehaviour
     {
         while (OpenWalls.Count > 0)
         {
-            yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.Space));
+            switch (generate)
+            {
+                case GenerationStyle.OnSpace:
+                    yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.Space));
+                    break;
+                case GenerationStyle.Timed:
+                    yield return new WaitForSeconds(generationSpeed);
+                    break;
+            }
             // foreach (RectInt room in OpenRooms)
             {
                 FindSingleWall(OpenWalls[0]);
@@ -232,8 +317,16 @@ public class DungeonGen : MonoBehaviour
         
         for (int i = 0; i < ClosedWalls.Count; i++)
         {
-            
-            yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.Space));
+
+            switch (generate)
+            {
+                case GenerationStyle.OnSpace:
+                    yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.Space));
+                    break;
+                case GenerationStyle.Timed:
+                    yield return new WaitForSeconds(generationSpeed);
+                    break;
+            }
 
             DebugDoorBool = true;
             DebugRoom = ClosedWalls[i].Room;
@@ -264,7 +357,9 @@ public class DungeonGen : MonoBehaviour
             }
             yield return new WaitForEndOfFrame();
         }
+        DebugDoorBool = false;
         Debug.Log("Doors Done!");
+        StartCoroutine(GraphDebugDraw(ClosedRooms[0]));
     }
 
 }
