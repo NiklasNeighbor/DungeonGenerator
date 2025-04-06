@@ -90,11 +90,11 @@ public class DungeonGen : MonoBehaviour
         {
             yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.Space));
             yield return new WaitForEndOfFrame();
-            DebugExtension.DebugCircle(OpenNodes[0].Room.center, Color.yellow, 1f, 5f);
-            Debug.Log("Room Center: " +  OpenNodes[0].Room.center);
+            DebugExtension.DebugCircle(ToVector3(OpenNodes[0].Room.center), Color.yellow, 1f, 5f);
+            Debug.Log("Room Center: " +  ToVector3(OpenNodes[0].Room.center));
             foreach (DungeonLocation neighbor in OpenNodes[0].NeighborLocations)
             {
-                Debug.DrawLine(neighbor.Room.center, neighbor.Room.center, Color.yellow, 5f);
+                Debug.DrawLine(ToVector3(neighbor.Room.center), ToVector3(neighbor.Room.center), Color.yellow, 5f);
                 OpenNodes.Add(neighbor);
             }
             ClosedNodes.Add(OpenNodes[0]);
@@ -107,7 +107,6 @@ public class DungeonGen : MonoBehaviour
         } else if (ClosedNodes.Count < ClosedRooms.Count + Doors.Count)
         {
             Debug.LogWarning("Not all Rooms are connected!");
-            Debug.LogWarning("What?");
             Debug.LogWarning("There are " + ClosedNodes.Count + " ClosedNodes and " + (ClosedRooms.Count + Doors.Count) + "ClosedRooms and Doors!");
         }
         else
@@ -124,19 +123,24 @@ public class DungeonGen : MonoBehaviour
             foreach (DungeonLocation node in OpenNodes)
             {
                 Gizmos.color = Color.yellow;
-                Gizmos.DrawSphere(node.Room.center, 1f);
+                Gizmos.DrawSphere(ToVector3(node.Room.center), 1f);
             }
 
             foreach (DungeonLocation node in ClosedNodes)
             {
                 Gizmos.color = Color.green;
-                Gizmos.DrawSphere(node.Room.center, 1f);
+                Gizmos.DrawSphere(ToVector3(node.Room.center), 1f);
                 foreach (DungeonLocation neighbor in node.NeighborLocations)
                 {
-                    Gizmos.DrawLine(node.Room.center, neighbor.Room.center);
+                    Gizmos.DrawLine(ToVector3(node.Room.center), ToVector3(neighbor.Room.center));
                 }
             }
         }
+    }
+
+    public Vector3 ToVector3(Vector2 Coordinates)
+    {
+        return new Vector3(Coordinates.x, 0, Coordinates.y);
     }
 
     public void DivideRect(DungeonLocation room)
@@ -310,7 +314,7 @@ public class DungeonGen : MonoBehaviour
             }
         }
     }
-    //TODO: figure out why the doors spawn weird at times.
+    
 
     public IEnumerator WallToDoorCoroutine()
     {
