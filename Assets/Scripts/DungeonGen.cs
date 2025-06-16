@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Experimental.GlobalIllumination;
 
@@ -42,7 +43,7 @@ public class DungeonGen : MonoBehaviour
 
         Doors = new List<DungeonLocation>();
 
-        OpenRooms.Add(new DungeonLocation(new RectInt(0, 0, 100, 50)));
+        OpenRooms.Add(new DungeonLocation(new RectInt(0, 0, 100, 50), false));
         StartCoroutine(SplitRoomsCoroutine());
         StartCoroutine(WaitForRoomsCoroutine());
     }
@@ -85,25 +86,54 @@ public class DungeonGen : MonoBehaviour
 
     public IEnumerator GraphDebugDraw(DungeonLocation StartNode)
     {
-        OpenNodes.Add(StartNode);
+        foreach(DungeonLocation room in ClosedRooms)
+        {
+            OpenNodes.Add(room);
+        }
+        foreach(DungeonLocation door in Doors)
+        {
+            OpenNodes.Add(door);
+        }
+
         while (OpenNodes.Count > 0)
         {
             yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.Space));
             yield return new WaitForEndOfFrame();
-            DebugExtension.DebugCircle(ToVector3(OpenNodes[0].Room.center), Color.yellow, 1f, 5f);
-            Debug.Log("Room Center: " +  ToVector3(OpenNodes[0].Room.center));
-            foreach (DungeonLocation neighbor in OpenNodes[0].NeighborLocations)
+
+            if (OpenNodes[0].isDoor)
             {
-                Debug.DrawLine(ToVector3(neighbor.Room.center), ToVector3(neighbor.Room.center), Color.yellow, 5f);
-                OpenNodes.Add(neighbor);
+                foreach (DungeonLocation room in ClosedRooms)
+                {
+                    if (AlgorithmsUtils.Intersects(OpenNodes[0].Room, room.Room) && OpenNodes.Contains(room))
+                    {
+                        //DebugExtension.DrawCircle(room.Room.center, Vector3.up, Color.yellow);
+                        //Debug.DrawLine(OpenNodes[0].Room.center, room.Room.center);
+                        OpenNodes[0].NeighborLocations.Add(room);
+                    }
+                }
+            } else
+            {
+                foreach (DungeonLocation door in Doors)
+                {
+                    if (AlgorithmsUtils.Intersects(OpenNodes[0].Room, door.Room) && OpenNodes.Contains(door))
+                    {
+                        //DebugExtension.DrawCircle(door.Room.center, Vector3.up, Color.yellow);
+                        //Debug.DrawLine(OpenNodes[0].Room.center, door.Room.center);
+                        OpenNodes[0].NeighborLocations.Add(door);
+                    }
+                }
             }
+
             ClosedNodes.Add(OpenNodes[0]);
             OpenNodes.Remove(OpenNodes[0]);
         }
+
+
+
         if (ClosedNodes.Count == ClosedRooms.Count + Doors.Count)
         {
             Debug.Log("All Rooms Are Connected!");
-            Debug.LogWarning("There are " + ClosedNodes.Count + " ClosedNodes and " + (ClosedRooms.Count + Doors.Count) + "ClosedRooms and Doors!");
+            Debug.Log("There are " + ClosedNodes.Count + " ClosedNodes and " + (ClosedRooms.Count + Doors.Count) + "ClosedRooms and Doors!");
         } else if (ClosedNodes.Count < ClosedRooms.Count + Doors.Count)
         {
             Debug.LogWarning("Not all Rooms are connected!");
@@ -151,8 +181,8 @@ public class DungeonGen : MonoBehaviour
             {
                 RectInt newRoomA = new RectInt(room.Room.x, room.Room.y, GetPaddedRandom(room.Room.width, MinRoomSize) + 1, room.Room.height);
                 RectInt newRoomB = new RectInt(room.Room.x + newRoomA.width -1, room.Room.y + 0, room.Room.width - newRoomA.width +1, room.Room.height);
-                OpenRooms.Add(new DungeonLocation(newRoomA));
-                OpenRooms.Add(new DungeonLocation(newRoomB));
+                OpenRooms.Add(new DungeonLocation(newRoomA,false));
+                OpenRooms.Add(new DungeonLocation(newRoomB, false));
                 OpenRooms.Remove(room);
                 DebugRoom = newRoomB;
                 DebugRoom2 = newRoomA;
@@ -161,8 +191,8 @@ public class DungeonGen : MonoBehaviour
             {
                 RectInt newRoomA = new RectInt(room.Room.x, room.Room.y, room.Room.width, GetPaddedRandom(room.Room.height, MinRoomSize) + 1);
                 RectInt newRoomB = new RectInt(room.Room.x + 0, room.Room.y + newRoomA.height -1, room.Room.width, room.Room.height - newRoomA.height +1);
-                OpenRooms.Add(new DungeonLocation(newRoomA));
-                OpenRooms.Add(new DungeonLocation(newRoomB));
+                OpenRooms.Add(new DungeonLocation(newRoomA, false));
+                OpenRooms.Add(new DungeonLocation(newRoomB, false));
                 OpenRooms.Remove(room);
                 DebugRoom = newRoomB;
                 DebugRoom2 = newRoomA;
@@ -276,9 +306,9 @@ public class DungeonGen : MonoBehaviour
             
             if (SharedWall.width > 2 || SharedWall.height > 2) //Ensure the wall in question is long enough to fit a door
             {
-                DungeonLocation WallLocation = new DungeonLocation(SharedWall);
-                WallLocation.SourceConnection = MainRoom;
-                WallLocation.NeighborLocations.Add(Room2);
+                DungeonLocation WallLocation = new DungeonLocation(SharedWall, false);
+                //WallLocation.SourceConnection = MainRoom;
+                //WallLocation.NeighborLocations.Add(Room2);
                 ClosedWalls.Add(WallLocation);
                 Debug.Log(SharedWall);
             }
@@ -295,9 +325,9 @@ public class DungeonGen : MonoBehaviour
                 int DoorOffset = Random.Range(0 + 1, wall.Room.width - 2);
                 RectInt NewDoor = new RectInt(wall.Room.x + DoorOffset, wall.Room.y, 1, 1);
 
-                DungeonLocation NewDoorLocation = new DungeonLocation(NewDoor);
-                wall.SourceConnection.NeighborLocations.Add(NewDoorLocation);
-                NewDoorLocation.NeighborLocations.Add(wall.NeighborLocations[0]);
+                DungeonLocation NewDoorLocation = new DungeonLocation(NewDoor, true);
+                //wall.SourceConnection.NeighborLocations.Add(NewDoorLocation);
+                //NewDoorLocation.NeighborLocations.Add(wall.NeighborLocations[0]);
 
                 Doors.Add(NewDoorLocation);
             }
@@ -306,9 +336,9 @@ public class DungeonGen : MonoBehaviour
                 int DoorOffset = Random.Range(0 + 1, wall.Room.height - 2);
                 RectInt NewDoor = new RectInt(wall.Room.x, wall.Room.y + DoorOffset, 1, 1);
 
-                DungeonLocation NewDoorLocation = new DungeonLocation(NewDoor);
-                wall.SourceConnection.NeighborLocations.Add(NewDoorLocation);
-                NewDoorLocation.NeighborLocations.Add(wall.NeighborLocations[0]);
+                DungeonLocation NewDoorLocation = new DungeonLocation(NewDoor, true);
+                //wall.SourceConnection.NeighborLocations.Add(NewDoorLocation);
+                //NewDoorLocation.NeighborLocations.Add(wall.NeighborLocations[0]);
 
                 Doors.Add(NewDoorLocation);
             }
@@ -338,26 +368,11 @@ public class DungeonGen : MonoBehaviour
 
             if (ClosedWalls[i].Room.width > ClosedWalls[i].Room.height)
             {
-                int DoorLocation = Random.Range(0 + 1, ClosedWalls[i].Room.width - 2);
-                RectInt NewDoor = new RectInt(ClosedWalls[i].Room.x + DoorLocation, ClosedWalls[i].Room.y, 1, 1);
-
-                DungeonLocation NewDoorLocation = new DungeonLocation(NewDoor);
-                ClosedWalls[i].SourceConnection.NeighborLocations.Add(NewDoorLocation);
-                NewDoorLocation.NeighborLocations.Add(ClosedWalls[i].NeighborLocations[0]);
-
-                DebugRoom2 = NewDoorLocation.Room;
-                Doors.Add(NewDoorLocation);
+                SplitHorizontally(i);
             }
             else
             {
-                int DoorLocation = Random.Range(0 + 1, ClosedWalls[i].Room.height - 2);
-                RectInt NewDoor = new RectInt(ClosedWalls[i].Room.x, ClosedWalls[i].Room.y + DoorLocation, 1, 1);
-                DungeonLocation NewDoorLocation = new DungeonLocation(NewDoor);
-                ClosedWalls[i].SourceConnection.NeighborLocations.Add(NewDoorLocation);
-                NewDoorLocation.NeighborLocations.Add(ClosedWalls[i].NeighborLocations[0]);
-
-                DebugRoom2 = NewDoorLocation.Room;
-                Doors.Add(NewDoorLocation);
+                SplitVertically(i);
             }
             yield return new WaitForEndOfFrame();
         }
@@ -366,4 +381,28 @@ public class DungeonGen : MonoBehaviour
         StartCoroutine(GraphDebugDraw(ClosedRooms[0]));
     }
 
+    private void SplitVertically(int i)
+    {
+        int DoorLocation = Random.Range(0 + 1, ClosedWalls[i].Room.height - 2);
+        RectInt NewDoor = new RectInt(ClosedWalls[i].Room.x, ClosedWalls[i].Room.y + DoorLocation, 1, 1);
+        DungeonLocation NewDoorLocation = new DungeonLocation(NewDoor, true);
+        //ClosedWalls[i].SourceConnection.NeighborLocations.Add(NewDoorLocation);
+        //NewDoorLocation.NeighborLocations.Add(ClosedWalls[i].NeighborLocations[0]);
+
+        DebugRoom2 = NewDoorLocation.Room;
+        Doors.Add(NewDoorLocation);
+    }
+
+    private void SplitHorizontally(int i)
+    {
+        int DoorLocation = Random.Range(0 + 1, ClosedWalls[i].Room.width - 2);
+        RectInt NewDoor = new RectInt(ClosedWalls[i].Room.x + DoorLocation, ClosedWalls[i].Room.y, 1, 1);
+
+        DungeonLocation NewDoorLocation = new DungeonLocation(NewDoor, true);
+        //ClosedWalls[i].SourceConnection.NeighborLocations.Add(NewDoorLocation);
+        //NewDoorLocation.NeighborLocations.Add(ClosedWalls[i].NeighborLocations[0]);
+
+        DebugRoom2 = NewDoorLocation.Room;
+        Doors.Add(NewDoorLocation);
+    }
 }
