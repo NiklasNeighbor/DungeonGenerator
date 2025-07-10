@@ -287,8 +287,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MinRoomSize: 5
   MaxRoomSize: 200
+  StartingRect:
+    x: 0
+    y: 0
+    width: 100
+    height: 50
   generate: 1
   generationSpeed: 0.1
+  WallPrefab: {fileID: 3261984432800675348, guid: 1885c3527e261814bbb0b6f0e13a42f2, type: 3}
+  FloorPrefab: {fileID: 3330134388970471633, guid: ae81866ec3fc1fb43897854da9dacd7b, type: 3}
 --- !u!4 &384253455
 Transform:
   m_ObjectHideFlags: 0

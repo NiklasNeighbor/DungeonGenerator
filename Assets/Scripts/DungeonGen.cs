@@ -5,13 +5,25 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Experimental.GlobalIllumination;
 
+
+public class AssetGridCell
+{
+    public bool IsWall;
+    public Vector2 WorldPosition;
+    public Vector2Int GridPosition;
+}
+
 public class DungeonGen : MonoBehaviour
 {
     public int MinRoomSize = 10;
     public int MaxRoomSize = 200;
+    public RectInt StartingRect = new RectInt(0, 0, 100, 50);
     public enum GenerationStyle {OnSpace, Timed, Instant}
     public GenerationStyle generate = GenerationStyle.OnSpace;
     public float generationSpeed = 0.5f;
+
+    public GameObject WallPrefab;
+    public GameObject FloorPrefab;
 
     private List<DungeonLocation> OpenRooms;
     private List<DungeonLocation> ClosedRooms;
@@ -29,6 +41,9 @@ public class DungeonGen : MonoBehaviour
 
     private bool DebugDoorBool = false;
 
+    private AssetGridCell[,] assetGrid;
+    private List<AssetGridCell> wallCells;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -43,7 +58,10 @@ public class DungeonGen : MonoBehaviour
 
         Doors = new List<DungeonLocation>();
 
-        OpenRooms.Add(new DungeonLocation(new RectInt(0, 0, 100, 50), false));
+        assetGrid = new AssetGridCell[StartingRect.width, StartingRect.height];
+        wallCells = new List<AssetGridCell>();
+
+        OpenRooms.Add(new DungeonLocation(StartingRect, false));
         StartCoroutine(SplitRoomsCoroutine());
         StartCoroutine(WaitForRoomsCoroutine());
     }
@@ -97,8 +115,15 @@ public class DungeonGen : MonoBehaviour
 
         while (OpenNodes.Count > 0)
         {
-            yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.Space));
-            yield return new WaitForEndOfFrame();
+            switch (generate)
+            {
+                case GenerationStyle.OnSpace:
+                    yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.Space));
+                    break;
+                case GenerationStyle.Timed:
+                    yield return new WaitForSeconds(generationSpeed);
+                    break;
+            }
 
             if (OpenNodes[0].isDoor)
             {
@@ -134,6 +159,7 @@ public class DungeonGen : MonoBehaviour
         {
             Debug.Log("All Rooms Are Connected!");
             Debug.Log("There are " + ClosedNodes.Count + " ClosedNodes and " + (ClosedRooms.Count + Doors.Count) + "ClosedRooms and Doors!");
+            ConstructAssetGrid();
         } else if (ClosedNodes.Count < ClosedRooms.Count + Doors.Count)
         {
             Debug.LogWarning("Not all Rooms are connected!");
@@ -405,4 +431,62 @@ public class DungeonGen : MonoBehaviour
         DebugRoom2 = NewDoorLocation.Room;
         Doors.Add(NewDoorLocation);
     }
+
+
+
+
+
+
+    private void ConstructAssetGrid()
+    {
+        RectInt gridSize = StartingRect;
+        for (int i = 0; i < gridSize.height; i++)
+        {
+            for (int j = 0; j < gridSize.width; j++)
+            {
+                assetGrid[j, i] = new AssetGridCell();
+                assetGrid[j, i].GridPosition = new Vector2Int(j, i);
+                foreach(DungeonLocation wall in ClosedWalls)
+                {
+                    if (AlgorithmsUtils.Intersects(new RectInt(i, j, 1, 1), wall.Room))
+                    {
+                        assetGrid[j,i].IsWall = true;
+                        wallCells.Add(assetGrid[j,i]);
+                        continue;
+                    }
+                }
+            }
+        }
+
+        foreach(AssetGridCell wall in wallCells)
+        {
+            foreach(DungeonLocation door in Doors)
+            {
+                if(AlgorithmsUtils.Intersects(new RectInt(wall.GridPosition.x, wall.GridPosition.y, 1, 1), door.Room))
+                {
+                    wall.IsWall = false;
+                }
+            }
+        }
+        SpawnAssets();
+    }
+
+    private void SpawnAssets()
+    {
+        RectInt gridSize = StartingRect;
+        for (int i = 0; i < gridSize.height; i++)
+        {
+            for (int j = 0; j < gridSize.width; j++)
+            {
+                if (assetGrid[j, i].IsWall)
+                {
+                    Instantiate(WallPrefab, ToVector3(assetGrid[j, i].GridPosition), Quaternion.identity);
+                } else
+                {
+                    Instantiate(FloorPrefab, ToVector3(assetGrid[j, i].GridPosition), Quaternion.identity);
+                }
+            }
+        }
+    }
 }
+
