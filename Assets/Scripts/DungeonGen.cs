@@ -448,7 +448,7 @@ public class DungeonGen : MonoBehaviour
                 assetGrid[j, i].GridPosition = new Vector2Int(j, i);
                 foreach(DungeonLocation wall in ClosedWalls)
                 {
-                    if (AlgorithmsUtils.Intersects(new RectInt(i, j, 1, 1), wall.Room))
+                    if (AlgorithmsUtils.Intersects(new RectInt(j, i, 1, 1), wall.Room))
                     {
                         assetGrid[j,i].IsWall = true;
                         wallCells.Add(assetGrid[j,i]);
