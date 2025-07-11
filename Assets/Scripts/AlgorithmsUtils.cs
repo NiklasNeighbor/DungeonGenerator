@@ -10,6 +10,14 @@ public class AlgorithmsUtils
                a.yMin < b.yMax &&
                a.yMax > b.yMin;
     }
+
+    public static bool IntersectsPoint(RectInt point, RectInt rect)
+    {
+        return point.x < rect.xMax &&
+               point.y < rect.yMax &&
+               point.x > rect.xMin &&
+               point.y > rect.yMax;
+    }
     
     public static RectInt Intersect(RectInt a, RectInt b)
     {
