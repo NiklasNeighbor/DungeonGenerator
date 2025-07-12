@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.AI.Navigation;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Experimental.GlobalIllumination;
@@ -15,6 +16,7 @@ public class AssetGridCell
 
 public class DungeonGen : MonoBehaviour
 {
+    public NavMeshSurface navMeshSurface;
     public int MinRoomSize = 10;
     public int MaxRoomSize = 200;
     public RectInt StartingRect = new RectInt(0, 0, 100, 50);
@@ -487,6 +489,13 @@ public class DungeonGen : MonoBehaviour
                 }
             }
         }
+
+        BakeNavMesh();
+    }
+
+    private void BakeNavMesh()
+    {
+        navMeshSurface.BuildNavMesh();
     }
 }
 
